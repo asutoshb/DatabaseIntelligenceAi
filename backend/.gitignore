@@ -29,6 +29,7 @@ bin/
 # Spring Boot
 application-local.properties
 *.log
+application.properties
 
 # OS
 .DS_Store
