@@ -9,6 +9,7 @@
 3. Click "Create new secret key"
 4. Copy the key (starts with `sk-`)
 5. **Save it somewhere safe!** (You won't see it again)
+// secret key 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
 
 ### Step 2: Set API Key
 
