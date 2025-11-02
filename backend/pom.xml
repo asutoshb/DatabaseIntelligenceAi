@@ -67,6 +67,12 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
         
+        <!-- WebClient: For HTTP REST API calls (OpenAI API) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        
         <!-- Validation: For input validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
