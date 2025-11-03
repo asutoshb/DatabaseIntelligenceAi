@@ -11,7 +11,7 @@ import java.util.List;
 public class ChatRequest {
     
     /**
-     * Model to use (GPT-3.5-turbo is cheaper, GPT-4 is better but expensive)
+     * Model to use (GPT-3.5-turbo is cheaper, GPT-4 is better but expensive)  
      */
     private String model = "gpt-3.5-turbo";
     
