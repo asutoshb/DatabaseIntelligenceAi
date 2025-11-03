@@ -21,13 +21,17 @@ public class OpenAIConfig {
     /**
      * OpenAI API Key
      * 
-     * Reads from:
-     * 1. Environment variable: OPENAI_API_KEY
-     * 2. application.properties: openai.api.key
+     * Priority order (highest to lowest):
+     * 1. System environment variable: OPENAI_API_KEY (production)
+     * 2. .env file: OPENAI_API_KEY (local development - recommended!)
+     * 3. application.properties: openai.api.key (fallback, not recommended)
+     * 
+     * The .env file is loaded by DotEnvConfig before this configuration.
      * 
      * NEVER commit API keys to Git!
+     * Always use environment variables or .env file!
      */
-    @Value("${openai.api.key:${OPENAI_API_KEY:}}")
+    @Value("${OPENAI_API_KEY:${openai.api.key:}}")
     private String apiKey;
 
     /**
