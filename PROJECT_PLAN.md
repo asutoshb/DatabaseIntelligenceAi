@@ -118,7 +118,7 @@ Building an AI-powered platform that converts natural language to SQL queries us
 
 ---
 
-### ⚡ **CHUNK 6: Backend - Query Execution Service**
+### ⚡ **CHUNK 6: Backend - Query Execution Service** ✅
 **Goal:** Execute generated SQL safely
 
 **What we'll build:**
@@ -341,7 +341,7 @@ Building an AI-powered platform that converts natural language to SQL queries us
    ↓
 5. NL→SQL (Chunk 5) ← Core feature!
    ↓
-6. Query Execution (Chunk 6)
+6. Query Execution (Chunk 6) ✅
    ↓
 7. Authentication (Chunk 7)
    ↓
