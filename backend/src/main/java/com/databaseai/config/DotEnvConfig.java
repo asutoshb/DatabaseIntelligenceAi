@@ -26,6 +26,8 @@ public class DotEnvConfig {
 
     /**
      * Static block to load .env file as early as possible
+     * This runs BEFORE Spring Boot starts, so we can set system properties
+     * that @Value annotations will read.
      */
     static {
         try {
@@ -37,6 +39,35 @@ public class DotEnvConfig {
             
             System.out.println("✅ .env file loaded successfully");
             
+            // Set system properties IMMEDIATELY (before Spring Boot starts)
+            // This ensures @Value annotations can read them
+            if (dotenv != null) {
+                // Load OpenAI API Key
+                String apiKey = dotenv.get("OPENAI_API_KEY");
+                if (apiKey != null && !apiKey.isEmpty()) {
+                    System.setProperty("OPENAI_API_KEY", apiKey);
+                }
+                
+                // Load JWT Secret (REQUIRED!)
+                String jwtSecret = dotenv.get("JWT_SECRET");
+                if (jwtSecret != null && !jwtSecret.isEmpty()) {
+                    System.setProperty("JWT_SECRET", jwtSecret);
+                    // Also set as jwt.secret for Spring Boot @Value to read
+                    System.setProperty("jwt.secret", jwtSecret);
+                    System.out.println("✅ JWT_SECRET loaded from .env file");
+                } else {
+                    System.err.println("⚠️  WARNING: JWT_SECRET not found in .env file!");
+                    System.err.println("⚠️  Application may fail to start without JWT_SECRET!");
+                }
+                
+                // Load JWT Expiration (optional)
+                String jwtExpiration = dotenv.get("JWT_EXPIRATION");
+                if (jwtExpiration != null && !jwtExpiration.isEmpty()) {
+                    System.setProperty("JWT_EXPIRATION", jwtExpiration);
+                    System.setProperty("jwt.expiration", jwtExpiration);
+                }
+            }
+            
         } catch (Exception e) {
             // If .env file doesn't exist, that's okay
             System.out.println("ℹ️  .env file not found, using system environment variables");
@@ -44,19 +75,22 @@ public class DotEnvConfig {
     }
 
     /**
-     * Set system properties from .env file
+     * PostConstruct method - logs confirmation that properties were loaded
      * 
-     * This runs early in Spring Boot initialization.
-     * System properties set here will be read by @Value annotations.
+     * Note: System properties are set in the static block (before Spring Boot starts)
+     * This method just confirms they were loaded.
      */
     @PostConstruct
-    public void setSystemProperties() {
+    public void confirmPropertiesLoaded() {
         if (dotenv != null) {
-            String apiKey = dotenv.get("OPENAI_API_KEY");
+            String apiKey = System.getProperty("OPENAI_API_KEY");
             if (apiKey != null && !apiKey.isEmpty()) {
-                // Set as system property so Spring Boot can read it
-                System.setProperty("OPENAI_API_KEY", apiKey);
-                System.out.println("✅ OPENAI_API_KEY loaded from .env file");
+                System.out.println("✅ OPENAI_API_KEY confirmed loaded from .env file");
+            }
+            
+            String jwtSecret = System.getProperty("jwt.secret");
+            if (jwtSecret != null && !jwtSecret.isEmpty()) {
+                System.out.println("✅ JWT_SECRET confirmed loaded from .env file");
             }
         }
     }

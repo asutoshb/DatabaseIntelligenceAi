@@ -53,6 +53,23 @@ public class User {
     private String email;
 
     /**
+     * Password (hashed with bcrypt) - NEVER store plain passwords!
+     * 
+     * @Column(nullable = false) = Password is required
+     */
+    @Column(nullable = false)
+    private String password;
+
+    /**
+     * User role (ADMIN or USER)
+     * 
+     * Default: USER (regular user)
+     * ADMIN: Can access admin endpoints
+     */
+    @Column(nullable = false)
+    private String role = "USER";
+
+    /**
      * Timestamp when user was created
      * 
      * @CreationTimestamp = Hibernate automatically sets this when user is created
@@ -75,6 +92,15 @@ public class User {
     public User(String username, String email) {
         this.username = username;
         this.email = email;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    // Constructor with password and role
+    public User(String username, String email, String password, String role) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.role = role != null ? role : "USER";
         this.createdAt = LocalDateTime.now();
     }
 
@@ -102,6 +128,22 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role != null ? role : "USER";
     }
 
     public LocalDateTime getCreatedAt() {

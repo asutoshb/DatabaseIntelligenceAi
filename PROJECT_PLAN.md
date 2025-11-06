@@ -141,7 +141,7 @@ Building an AI-powered platform that converts natural language to SQL queries us
 
 ---
 
-### 🔐 **CHUNK 7: Backend - Authentication & Authorization**
+### 🔐 **CHUNK 7: Backend - Authentication & Authorization** ✅
 **Goal:** Secure the API with JWT authentication
 
 **What we'll build:**
@@ -343,7 +343,7 @@ Building an AI-powered platform that converts natural language to SQL queries us
    ↓
 6. Query Execution (Chunk 6) ✅
    ↓
-7. Authentication (Chunk 7)
+7. Authentication (Chunk 7) ✅
    ↓
 8. WebSocket (Chunk 8)
    ↓

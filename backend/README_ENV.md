@@ -27,15 +27,28 @@ cd backend
 touch .env
 ```
 
-### Step 2: Add Your API Key
+### Step 2: Add Your Environment Variables
 
 Open `backend/.env` and add:
 
 ```env
-OPENAI_API_KEY=sk-example
+# OpenAI API Key (Chunk 3)
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# JWT Secret Key (Chunk 7)
+# Must be at least 32 characters (256 bits) for security
+JWT_SECRET=mySecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLongForProductionUse
+
+# JWT Expiration (optional, defaults to 24 hours)
+JWT_EXPIRATION=86400000
 ```
 
 **File location:** `backend/.env` (same directory as `pom.xml`)
+
+**⚠️ Important:** 
+- `JWT_SECRET` is **REQUIRED** - application will fail to start without it
+- Must be at least 32 characters long
+- Never commit this file to Git!
 
 ---
 
@@ -56,15 +69,22 @@ backend/
 
 **Priority Order (what Spring Boot reads first):**
 
-1. **System Environment Variable** `OPENAI_API_KEY` (production)
-2. **.env file** `OPENAI_API_KEY` (local development) ✅ **What you're using!**
-3. **application.properties** `openai.api.key` (fallback)
+1. **System Environment Variable** (production)
+   - `OPENAI_API_KEY`
+   - `JWT_SECRET`
+   - `JWT_EXPIRATION`
+2. **.env file** (local development) ✅ **What you're using!**
+   - `OPENAI_API_KEY`
+   - `JWT_SECRET` (REQUIRED)
+   - `JWT_EXPIRATION` (optional)
+3. **application.properties** (fallback, not recommended for secrets)
 
 **Flow:**
 1. `DotEnvConfig` loads `.env` file when app starts
-2. Sets `OPENAI_API_KEY` as system property
-3. `OpenAIConfig` reads it via `@Value("${OPENAI_API_KEY:...}")`
-4. Backend uses it automatically! 🎉
+2. Sets `OPENAI_API_KEY` and `JWT_SECRET` as system properties
+3. `OpenAIConfig` reads `OPENAI_API_KEY` via `@Value("${OPENAI_API_KEY:...}")`
+4. `JwtUtil` reads `JWT_SECRET` via `@Value("${jwt.secret}")`
+5. Backend uses them automatically! 🎉
 
 ---
 
@@ -96,7 +116,15 @@ cd backend
 ```
 ✅ .env file loaded successfully
 ✅ OPENAI_API_KEY loaded from .env file
+✅ JWT_SECRET loaded from .env file
+✅ JWT_EXPIRATION loaded from .env file
 ```
+
+**⚠️ If you see:**
+```
+⚠️  WARNING: JWT_SECRET not found in .env file!
+```
+**Action:** Add `JWT_SECRET=...` to your `.env` file and restart!
 
 ### Step 4: Test API
 
@@ -137,8 +165,9 @@ curl http://localhost:8080/api/embeddings/status
 **Next Steps:**
 1. Create `backend/.env` file
 2. Add `OPENAI_API_KEY=sk-your-key-here`
-3. Restart backend
-4. Done! 🎉
+3. Add `JWT_SECRET=your`
+4. Restart backend
+5. Done! 🎉
 
 ---
 

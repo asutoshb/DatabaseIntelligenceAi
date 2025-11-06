@@ -53,13 +53,30 @@
             <scope>runtime</scope>
         </dependency>
         
-        <!-- Spring Boot Security: For authentication (commented out for now, will enable in Chunk 7) -->
-        <!--
+        <!-- Spring Boot Security: For authentication (Chunk 7) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        -->
+        
+        <!-- JWT Library: For token generation and validation (Chunk 7) -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.3</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.3</version>
+            <scope>runtime</scope>
+        </dependency>
         
         <!-- WebSocket Support -->
         <dependency>
