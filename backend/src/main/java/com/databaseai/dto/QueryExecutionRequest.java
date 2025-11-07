@@ -35,6 +35,11 @@ public class QueryExecutionRequest {
      */
     private Integer timeoutSeconds = 30;
 
+    /**
+     * Optional client-provided request ID for correlating WebSocket updates
+     */
+    private String clientRequestId;
+
     // Constructors
     public QueryExecutionRequest() {
     }
@@ -79,6 +84,14 @@ public class QueryExecutionRequest {
         } else {
             this.timeoutSeconds = timeoutSeconds != null ? timeoutSeconds : 30;
         }
+    }
+
+    public String getClientRequestId() {
+        return clientRequestId;
+    }
+
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
     }
 }
 

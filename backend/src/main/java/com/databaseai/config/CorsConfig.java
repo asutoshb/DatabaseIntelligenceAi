@@ -30,6 +30,7 @@ public class CorsConfig {
         // Allow requests from these origins (where frontend runs)
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("http://localhost:5173"); // Vite default port
+        config.addAllowedOriginPattern("*");
         
         // Allow these HTTP methods
         config.addAllowedMethod("GET");

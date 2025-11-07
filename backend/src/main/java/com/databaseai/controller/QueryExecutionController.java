@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Query Execution Controller
@@ -62,12 +63,19 @@ public class QueryExecutionController {
     public ResponseEntity<QueryExecutionResponse> executeQuery(
             @Valid @RequestBody QueryExecutionRequest request
     ) {
+        String requestId = (request.getClientRequestId() != null && !request.getClientRequestId().isBlank())
+                ? request.getClientRequestId()
+                : UUID.randomUUID().toString();
+
         try {
             QueryExecutionResponse response = queryExecutionService.executeQuery(
                     request.getDatabaseInfoId(),
                     request.getSqlQuery(),
-                    request.getTimeoutSeconds()
+                    request.getTimeoutSeconds(),
+                    requestId
             );
+
+            response.setRequestId(requestId);
 
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
@@ -80,6 +88,7 @@ public class QueryExecutionController {
             errorResponse.setErrorMessage("Unexpected error: " + e.getMessage());
             errorResponse.setDatabaseInfoId(request.getDatabaseInfoId());
             errorResponse.setSqlQuery(request.getSqlQuery());
+            errorResponse.setRequestId(requestId);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

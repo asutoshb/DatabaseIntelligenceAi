@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Natural Language to SQL Controller
@@ -54,13 +55,19 @@ public class NLToSQLController {
     public ResponseEntity<NLToSQLResponse> convertToSQL(
             @Valid @RequestBody NLToSQLRequest request
     ) {
+        String requestId = (request.getClientRequestId() != null && !request.getClientRequestId().isBlank())
+                ? request.getClientRequestId()
+                : UUID.randomUUID().toString();
+
         try {
             NLToSQLResponse response = nlToSQLService.convertToSQL(
                     request.getDatabaseInfoId(),
                     request.getNaturalLanguageQuery(),
-                    request.getTopK() != null ? request.getTopK() : 5
+                    request.getTopK() != null ? request.getTopK() : 5,
+                    requestId
             );
 
+            response.setRequestId(requestId);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -71,6 +78,7 @@ public class NLToSQLController {
             errorResponse.setDatabaseInfoId(request.getDatabaseInfoId());
             errorResponse.setValid(false);
             errorResponse.setValidationErrors(List.of("Error: " + e.getMessage()));
+            errorResponse.setRequestId(requestId);
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }

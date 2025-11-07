@@ -39,6 +39,9 @@ public class QueryExecutionService {
     @Autowired
     private SQLValidator sqlValidator;
 
+    @Autowired
+    private RealTimeUpdateService realTimeUpdateService;
+
     /**
      * Default query timeout (30 seconds)
      */
@@ -58,32 +61,84 @@ public class QueryExecutionService {
      * @return QueryExecutionResponse with results or error
      */
     public QueryExecutionResponse executeQuery(Long databaseInfoId, String sqlQuery, Integer timeoutSeconds) {
+        return executeQuery(databaseInfoId, sqlQuery, timeoutSeconds, null);
+    }
+
+    public QueryExecutionResponse executeQuery(Long databaseInfoId, String sqlQuery, Integer timeoutSeconds, String requestId) {
+        String effectiveRequestId = (requestId != null && !requestId.isBlank())
+                ? requestId
+                : UUID.randomUUID().toString();
+
         QueryExecutionResponse response = new QueryExecutionResponse();
         response.setDatabaseInfoId(databaseInfoId);
         response.setSqlQuery(sqlQuery);
         response.setExecutedAt(LocalDateTime.now());
+        response.setRequestId(effectiveRequestId);
 
         long startTime = System.currentTimeMillis();
+
+        Map<String, Object> requestMeta = new HashMap<>();
+        requestMeta.put("databaseInfoId", databaseInfoId);
+        realTimeUpdateService.publishQueryExecutionProgress(
+                effectiveRequestId,
+                "REQUEST_RECEIVED",
+                "Received query execution request",
+                requestMeta
+        );
 
         // Step 1: Validate SQL query
         SQLValidator.ValidationResult validation = sqlValidator.validate(sqlQuery);
         if (!validation.isValid()) {
+            Map<String, Object> validationData = new HashMap<>();
+            validationData.put("errors", validation.getErrors());
+            realTimeUpdateService.publishQueryExecutionError(
+                    effectiveRequestId,
+                    "VALIDATION_FAILED",
+                    "SQL validation failed",
+                    validationData
+            );
             response.setSuccess(false);
             response.setErrorMessage("SQL validation failed: " + String.join(", ", validation.getErrors()));
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
             return response;
         }
 
+        Map<String, Object> validationSuccessData = new HashMap<>();
+        validationSuccessData.put("timeoutSeconds", timeoutSeconds != null ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS);
+        realTimeUpdateService.publishQueryExecutionProgress(
+                effectiveRequestId,
+                "VALIDATED",
+                "SQL validation successful",
+                validationSuccessData
+        );
+
         // Step 2: Get database connection info
         DatabaseInfo databaseInfo = databaseInfoRepository.findById(databaseInfoId)
                 .orElse(null);
 
         if (databaseInfo == null) {
+            Map<String, Object> databaseError = new HashMap<>();
+            databaseError.put("databaseInfoId", databaseInfoId);
+            realTimeUpdateService.publishQueryExecutionError(
+                    effectiveRequestId,
+                    "DATABASE_NOT_FOUND",
+                    "Database not found with ID: " + databaseInfoId,
+                    databaseError
+            );
             response.setSuccess(false);
             response.setErrorMessage("Database not found with ID: " + databaseInfoId);
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
             return response;
         }
+
+        Map<String, Object> connectionData = new HashMap<>();
+        connectionData.put("databaseType", databaseInfo.getDatabaseType());
+        realTimeUpdateService.publishQueryExecutionProgress(
+                effectiveRequestId,
+                "CONNECTING",
+                "Establishing read-only database connection",
+                connectionData
+        );
 
         // Step 3: Execute query
         Connection connection = null;
@@ -97,10 +152,19 @@ public class QueryExecutionService {
             // Step 3b: Set read-only mode (security!)
             connection.setReadOnly(true);
 
+            Map<String, Object> executionMeta = new HashMap<>();
+            executionMeta.put("sqlPreview", sqlQuery.substring(0, Math.min(sqlQuery.length(), 80)));
+            realTimeUpdateService.publishQueryExecutionProgress(
+                    effectiveRequestId,
+                    "EXECUTING",
+                    "Executing SQL query",
+                    executionMeta
+            );
+
             // Step 3c: Create statement with timeout
             statement = connection.createStatement();
-            int timeout = (timeoutSeconds != null && timeoutSeconds > 0) 
-                    ? Math.min(timeoutSeconds, MAX_TIMEOUT_SECONDS) 
+            int timeout = (timeoutSeconds != null && timeoutSeconds > 0)
+                    ? Math.min(timeoutSeconds, MAX_TIMEOUT_SECONDS)
                     : DEFAULT_TIMEOUT_SECONDS;
             statement.setQueryTimeout(timeout);
 
@@ -118,15 +182,47 @@ public class QueryExecutionService {
             response.setRowCount(rows.size());
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
 
+            Map<String, Object> successData = new HashMap<>();
+            successData.put("rowCount", rows.size());
+            successData.put("columns", columns);
+            realTimeUpdateService.publishQueryExecutionSuccess(
+                    effectiveRequestId,
+                    "COMPLETED",
+                    "Query execution completed",
+                    successData
+            );
+
         } catch (SQLTimeoutException e) {
+            Map<String, Object> timeoutData = new HashMap<>();
+            timeoutData.put("timeoutSeconds", timeoutSeconds != null ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS);
+            realTimeUpdateService.publishQueryExecutionError(
+                    effectiveRequestId,
+                    "TIMEOUT",
+                    "Query timed out",
+                    timeoutData
+            );
             response.setSuccess(false);
             response.setErrorMessage("Query timeout: Query took longer than " + timeoutSeconds + " seconds");
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
         } catch (SQLException e) {
+            Map<String, Object> sqlErrorData = new HashMap<>();
+            sqlErrorData.put("sqlState", e.getSQLState());
+            realTimeUpdateService.publishQueryExecutionError(
+                    effectiveRequestId,
+                    "SQL_ERROR",
+                    "SQL execution error: " + e.getMessage(),
+                    sqlErrorData
+            );
             response.setSuccess(false);
             response.setErrorMessage("SQL execution error: " + e.getMessage());
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
         } catch (Exception e) {
+            realTimeUpdateService.publishQueryExecutionError(
+                    effectiveRequestId,
+                    "UNEXPECTED_ERROR",
+                    "Unexpected error: " + e.getMessage(),
+                    null
+            );
             response.setSuccess(false);
             response.setErrorMessage("Unexpected error: " + e.getMessage());
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);

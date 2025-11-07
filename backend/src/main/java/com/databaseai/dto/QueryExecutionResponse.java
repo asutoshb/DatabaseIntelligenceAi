@@ -70,6 +70,11 @@ public class QueryExecutionResponse {
      */
     private Long databaseInfoId;
 
+    /**
+     * Request ID for correlating WebSocket updates
+     */
+    private String requestId;
+
     // Constructors
     public QueryExecutionResponse() {
         this.executedAt = LocalDateTime.now();
@@ -154,6 +159,14 @@ public class QueryExecutionResponse {
 
     public void setDatabaseInfoId(Long databaseInfoId) {
         this.databaseInfoId = databaseInfoId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 }
 

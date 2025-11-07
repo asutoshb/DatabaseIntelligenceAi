@@ -32,6 +32,11 @@ public class NLToSQLRequest {
      */
     private Integer topK = 5;
 
+    /**
+     * Optional client-provided request ID for correlating WebSocket updates
+     */
+    private String clientRequestId;
+
     // Constructors
     public NLToSQLRequest() {
     }
@@ -65,6 +70,14 @@ public class NLToSQLRequest {
 
     public void setTopK(Integer topK) {
         this.topK = topK;
+    }
+
+    public String getClientRequestId() {
+        return clientRequestId;
+    }
+
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
     }
 }
 

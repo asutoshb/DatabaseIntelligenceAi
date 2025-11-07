@@ -48,6 +48,11 @@ public class NLToSQLResponse {
      */
     private Long databaseInfoId;
 
+    /**
+     * Request ID for correlating with WebSocket updates
+     */
+    private String requestId;
+
     // Constructors
     public NLToSQLResponse() {
     }
@@ -114,6 +119,14 @@ public class NLToSQLResponse {
 
     public void setDatabaseInfoId(Long databaseInfoId) {
         this.databaseInfoId = databaseInfoId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     /**

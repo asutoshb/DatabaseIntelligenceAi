@@ -6,7 +6,10 @@ import com.databaseai.repository.DatabaseInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +45,9 @@ public class NLToSQLService {
     @Autowired
     private DatabaseInfoRepository databaseInfoRepository;
 
+    @Autowired
+    private RealTimeUpdateService realTimeUpdateService;
+
     /**
      * Convert natural language query to SQL using RAG
      * 
@@ -51,13 +57,77 @@ public class NLToSQLService {
      * @return NLToSQLResponse with generated SQL
      */
     public NLToSQLResponse convertToSQL(Long databaseInfoId, String naturalLanguageQuery, int topK) {
+        return convertToSQL(databaseInfoId, naturalLanguageQuery, topK, null);
+    }
+
+    /**
+     * Convert natural language query to SQL using RAG (with request correlation ID)
+     */
+    public NLToSQLResponse convertToSQL(Long databaseInfoId, String naturalLanguageQuery, int topK, String requestId) {
+        String effectiveRequestId = (requestId != null && !requestId.isBlank())
+                ? requestId
+                : UUID.randomUUID().toString();
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("databaseInfoId", databaseInfoId);
+        meta.put("query", naturalLanguageQuery);
+        meta.put("topK", topK);
+        realTimeUpdateService.publishNlToSqlProgress(
+                effectiveRequestId,
+                "REQUEST_RECEIVED",
+                "Received NL to SQL conversion request",
+                meta
+        );
+
         // Step 1: Verify database exists
-        DatabaseInfo databaseInfo = databaseInfoRepository.findById(databaseInfoId)
-                .orElseThrow(() -> new RuntimeException("Database not found with ID: " + databaseInfoId));
+        DatabaseInfo databaseInfo = null;
+        try {
+            databaseInfo = databaseInfoRepository.findById(databaseInfoId)
+                    .orElseThrow(() -> new RuntimeException("Database not found with ID: " + databaseInfoId));
+        } catch (RuntimeException e) {
+            realTimeUpdateService.publishNlToSqlError(
+                    effectiveRequestId,
+                    "DATABASE_LOOKUP_FAILED",
+                    e.getMessage(),
+                    meta
+            );
+            throw e;
+        }
+
+        Map<String, Object> retrievalMeta = new HashMap<>();
+        retrievalMeta.put("databaseInfoId", databaseInfoId);
+        realTimeUpdateService.publishNlToSqlProgress(
+                effectiveRequestId,
+                "RETRIEVING_SCHEMA",
+                "Retrieving relevant schema context",
+                retrievalMeta
+        );
 
         // Step 2: Retrieve relevant schemas using RAG (Retrieval step)
-        List<RAGService.SchemaContext> relevantSchemas = ragService.retrieveRelevantSchemas(
-                databaseInfoId, naturalLanguageQuery, topK
+        List<RAGService.SchemaContext> relevantSchemas;
+        try {
+            relevantSchemas = ragService.retrieveRelevantSchemas(
+                    databaseInfoId, naturalLanguageQuery, topK
+            );
+        } catch (Exception e) {
+            Map<String, Object> retrievalErrorMeta = new HashMap<>();
+            retrievalErrorMeta.put("databaseInfoId", databaseInfoId);
+            realTimeUpdateService.publishNlToSqlError(
+                    effectiveRequestId,
+                    "RETRIEVAL_FAILED",
+                    "Schema retrieval failed: " + e.getMessage(),
+                    retrievalErrorMeta
+            );
+            throw new RuntimeException(e);
+        }
+
+        Map<String, Object> promptMeta = new HashMap<>();
+        promptMeta.put("schemaCount", relevantSchemas.size());
+        realTimeUpdateService.publishNlToSqlProgress(
+                effectiveRequestId,
+                "PROMPT_BUILDING",
+                "Building prompt with schema context",
+                promptMeta
         );
 
         // Step 3: Build enhanced prompt with schema context
@@ -65,11 +135,40 @@ public class NLToSQLService {
         String userPrompt = buildUserPrompt(naturalLanguageQuery, relevantSchemas);
 
         // Step 4: Generate SQL using GPT (Generation step)
-        String generatedSQL = llmService.generateText(userPrompt, systemPrompt);
+        realTimeUpdateService.publishNlToSqlProgress(
+                effectiveRequestId,
+                "LLM_CALL",
+                "Generating SQL with GPT",
+                null
+        );
+
+        String generatedSQL;
+        try {
+            generatedSQL = llmService.generateText(userPrompt, systemPrompt);
+        } catch (Exception e) {
+            realTimeUpdateService.publishNlToSqlError(
+                    effectiveRequestId,
+                    "GENERATION_FAILED",
+                    "LLM generation failed: " + e.getMessage(),
+                    null
+            );
+            throw new RuntimeException(e);
+        }
 
         // Step 5: Clean and validate SQL
         String cleanedSQL = cleanSQL(generatedSQL);
         SQLValidator.ValidationResult validation = sqlValidator.validate(cleanedSQL);
+        int errorCount = validation.getErrors() != null ? validation.getErrors().size() : 0;
+
+        Map<String, Object> validationMeta = new HashMap<>();
+        validationMeta.put("isValid", validation.isValid());
+        validationMeta.put("errorCount", errorCount);
+        realTimeUpdateService.publishNlToSqlProgress(
+                effectiveRequestId,
+                "VALIDATION",
+                "Validating generated SQL",
+                validationMeta
+        );
 
         // Step 6: Generate explanation
         String explanation = generateExplanation(naturalLanguageQuery, cleanedSQL, relevantSchemas);
@@ -80,6 +179,17 @@ public class NLToSQLService {
         response.setExplanation(explanation);
         response.setValid(validation.isValid());
         response.setValidationErrors(validation.getErrors());
+        response.setRequestId(effectiveRequestId);
+
+        Map<String, Object> successMeta = new HashMap<>();
+        successMeta.put("isValid", validation.isValid());
+        successMeta.put("schemaCount", relevantSchemas.size());
+        realTimeUpdateService.publishNlToSqlSuccess(
+                effectiveRequestId,
+                "COMPLETED",
+                "NL to SQL conversion completed",
+                successMeta
+        );
 
         return response;
     }
