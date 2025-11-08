@@ -101,7 +101,8 @@ public class SecurityConfig {
                 // Public endpoints (no authentication required)
                 .requestMatchers("/auth/register", "/auth/login").permitAll()
                 .requestMatchers("/health").permitAll()
-                .requestMatchers("/ws/**", "/topic/**", "/app/**").permitAll()
+                // WebSocket endpoints (with and without context path)
+                .requestMatchers("/ws/**", "/api/ws/**", "/topic/**", "/app/**").permitAll()
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
