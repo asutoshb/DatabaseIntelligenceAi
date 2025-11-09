@@ -11,6 +11,7 @@ import type {
   QueryExecutionRequest,
   QueryExecutionResponse,
   HealthResponse,
+  DatabaseInfo,
 } from '../types';
 
 // Base URL for backend API
@@ -87,6 +88,20 @@ export const queryExecutionApi = {
       '/query-execution/execute',
       request
     );
+    return response.data;
+  },
+};
+
+/**
+ * Database Info API
+ */
+export const databaseApi = {
+  getAll: async (): Promise<DatabaseInfo[]> => {
+    const response = await apiClient.get<DatabaseInfo[]>('/databases');
+    return response.data;
+  },
+  getById: async (id: number): Promise<DatabaseInfo> => {
+    const response = await apiClient.get<DatabaseInfo>(`/databases/${id}`);
     return response.data;
   },
 };

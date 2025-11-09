@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -101,6 +102,14 @@ public class SecurityConfig {
                 // Public endpoints (no authentication required)
                 .requestMatchers("/auth/register", "/auth/login").permitAll()
                 .requestMatchers("/health").permitAll()
+                // Allow GET /databases without auth (for listing available databases)
+                // POST/PUT/DELETE still require authentication
+                .requestMatchers(HttpMethod.GET, "/databases").permitAll()
+                .requestMatchers(HttpMethod.GET, "/databases/**").permitAll()
+                // Allow NL to SQL endpoints without auth (for development)
+                .requestMatchers("/nl-to-sql/**").permitAll()
+                // Allow query execution endpoints without auth (for development)
+                .requestMatchers("/query-execution/**").permitAll()
                 // WebSocket endpoints (with and without context path)
                 .requestMatchers("/ws/**", "/api/ws/**", "/topic/**", "/app/**").permitAll()
                 

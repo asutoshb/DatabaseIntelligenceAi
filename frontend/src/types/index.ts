@@ -22,15 +22,10 @@ export interface NLToSQLRequest {
 }
 
 // Schema Context (used in NL to SQL response)
+// Note: Field names match backend DTO (NLToSQLResponse.SchemaContext)
 export interface SchemaContext {
-  tableName: string;
-  schema: string;
-  description?: string;
-  columns?: Array<{
-    name: string;
-    type: string;
-    description?: string;
-  }>;
+  schemaName: string;
+  schemaDescription: string;
 }
 
 // NL to SQL Response
