@@ -207,14 +207,37 @@ public class QueryExecutionService {
         } catch (SQLException e) {
             Map<String, Object> sqlErrorData = new HashMap<>();
             sqlErrorData.put("sqlState", e.getSQLState());
+            sqlErrorData.put("errorCode", e.getErrorCode());
+            
+            // Provide more user-friendly error messages for common database errors
+            String errorMessage = e.getMessage();
+            String userFriendlyMessage = errorMessage;
+            
+            if (errorMessage != null) {
+                if (errorMessage.contains("role") && errorMessage.contains("does not exist")) {
+                    userFriendlyMessage = "Database connection failed: The database user '" + 
+                        databaseInfo.getUsername() + "' does not exist. Please check your database configuration.";
+                } else if (errorMessage.contains("password authentication failed")) {
+                    userFriendlyMessage = "Database connection failed: Invalid username or password. Please check your database credentials.";
+                } else if (errorMessage.contains("Connection refused")) {
+                    userFriendlyMessage = "Database connection failed: Cannot connect to database at " + 
+                        databaseInfo.getHost() + ":" + databaseInfo.getPort() + ". Please check if the database is running.";
+                } else if (errorMessage.contains("database") && errorMessage.contains("does not exist")) {
+                    userFriendlyMessage = "Database connection failed: The database '" + 
+                        databaseInfo.getDatabaseName() + "' does not exist. Please check your database configuration.";
+                } else if (errorMessage.contains("timeout")) {
+                    userFriendlyMessage = "Database connection failed: Connection timeout. Please check if the database is accessible.";
+                }
+            }
+            
             realTimeUpdateService.publishQueryExecutionError(
                     effectiveRequestId,
                     "SQL_ERROR",
-                    "SQL execution error: " + e.getMessage(),
+                    "SQL execution error: " + userFriendlyMessage,
                     sqlErrorData
             );
             response.setSuccess(false);
-            response.setErrorMessage("SQL execution error: " + e.getMessage());
+            response.setErrorMessage(userFriendlyMessage);
             response.setExecutionTimeMs(System.currentTimeMillis() - startTime);
         } catch (Exception e) {
             realTimeUpdateService.publishQueryExecutionError(

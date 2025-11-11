@@ -58,29 +58,36 @@ public class SQLValidator {
         }
 
         String sqlUpper = sql.trim().toUpperCase();
+        String sqlOriginal = sql.trim();
 
-        // Check for dangerous keywords
+        // Ensure it's a SELECT query (for now, we only allow SELECT)
+        // Check this first as it's the most common requirement
+        if (!sqlUpper.startsWith("SELECT")) {
+            errors.add("Only SELECT queries are allowed. Query must start with SELECT.");
+            return new ValidationResult(false, errors); // Early return if not SELECT
+        }
+
+        // Check for dangerous keywords using word boundaries
+        // This prevents false positives like "ORDER" matching "DROP" or "revenue" matching "REVOKE"
         for (String keyword : DANGEROUS_KEYWORDS) {
-            if (sqlUpper.contains(keyword)) {
+            // Use word boundary regex to match whole words only
+            // \b is word boundary, (?i) for case-insensitive
+            Pattern keywordPattern = Pattern.compile("\\b" + Pattern.quote(keyword) + "\\b", Pattern.CASE_INSENSITIVE);
+            if (keywordPattern.matcher(sqlOriginal).find()) {
                 errors.add("Dangerous SQL keyword detected: " + keyword + ". Only SELECT queries are allowed.");
             }
         }
 
         // Check for SQL injection patterns
         for (Pattern pattern : SQL_INJECTION_PATTERNS) {
-            if (pattern.matcher(sql).find()) {
+            if (pattern.matcher(sqlOriginal).find()) {
                 errors.add("Potential SQL injection detected");
             }
         }
 
         // Check for balanced parentheses
-        if (!areParenthesesBalanced(sql)) {
+        if (!areParenthesesBalanced(sqlOriginal)) {
             errors.add("Unbalanced parentheses in SQL query");
-        }
-
-        // Ensure it's a SELECT query (for now, we only allow SELECT)
-        if (!sqlUpper.trim().startsWith("SELECT")) {
-            errors.add("Only SELECT queries are allowed");
         }
 
         return new ValidationResult(errors.isEmpty(), errors);

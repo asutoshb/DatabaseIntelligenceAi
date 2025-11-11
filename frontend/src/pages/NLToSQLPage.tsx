@@ -35,15 +35,19 @@ import {
   Send as SendIcon,
   ContentCopy as CopyIcon,
   History as HistoryIcon,
+  PlayArrow as PlayArrowIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { nlToSqlApi, databaseApi } from '../services/api';
+import { nlToSqlApi, databaseApi, queryExecutionApi } from '../services/api';
 import type {
   NLToSQLRequest,
   NLToSQLResponse,
   DatabaseInfo,
   RealTimeStatusMessage,
+  QueryExecutionResponse,
 } from '../types';
+import ResultsTable from '../components/ResultsTable';
 
 interface QueryHistoryItem {
   id: string;
@@ -65,16 +69,25 @@ export default function NLToSQLPage() {
   const [databases, setDatabases] = useState<DatabaseInfo[]>([]);
   const [loadingDatabases, setLoadingDatabases] = useState(true);
 
-  // Query execution state
+  // NL to SQL state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [response, setResponse] = useState<NLToSQLResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
-  // Real-time progress state
+  // Real-time progress state (NL to SQL)
   const [progressStage, setProgressStage] = useState<string>('');
   const [progressStatus, setProgressStatus] = useState<'IN_PROGRESS' | 'SUCCESS' | 'ERROR' | null>(null);
   const [progressMessage, setProgressMessage] = useState<string>('');
+
+  // Query execution state
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<QueryExecutionResponse | null>(null);
+  const [executionError, setExecutionError] = useState<string | null>(null);
+  const [executionRequestId, setExecutionRequestId] = useState<string | null>(null);
+  const [executionProgressStage, setExecutionProgressStage] = useState<string>('');
+  const [executionProgressStatus, setExecutionProgressStatus] = useState<'IN_PROGRESS' | 'SUCCESS' | 'ERROR' | null>(null);
+  const [executionProgressMessage, setExecutionProgressMessage] = useState<string>('');
 
   // Query history
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
@@ -107,9 +120,32 @@ export default function NLToSQLPage() {
     }
   }, [currentRequestId]);
 
+  // WebSocket callback for Query Execution updates
+  const handleQueryExecutionUpdate = useCallback((message: RealTimeStatusMessage) => {
+    // Only process updates for the current execution request
+    if (executionRequestId && message.requestId === executionRequestId) {
+      setExecutionProgressStage(message.stage);
+      setExecutionProgressStatus(message.status);
+      setExecutionProgressMessage(message.message);
+
+      // If successful, the response should already be set from the API call
+      if (message.status === 'SUCCESS' && message.data) {
+        // Results are set from API response, but we can update progress
+        setIsExecuting(false);
+      }
+
+      // If error, show error message
+      if (message.status === 'ERROR') {
+        setExecutionError(message.message || 'Query execution failed');
+        setIsExecuting(false);
+      }
+    }
+  }, [executionRequestId]);
+
   // Initialize WebSocket connection
   useWebSocket({
     onNlToSqlUpdate: handleNlToSqlUpdate,
+    onQueryExecutionUpdate: handleQueryExecutionUpdate,
   });
 
   // Load databases on mount
@@ -224,6 +260,98 @@ export default function NLToSQLPage() {
       navigator.clipboard.writeText(response.sqlQuery);
       // You could add a toast notification here
     }
+  };
+
+  // Execute generated SQL query
+  const handleExecuteQuery = async () => {
+    if (!response?.sqlQuery || !selectedDatabaseId) {
+      setExecutionError('No SQL query available to execute');
+      return;
+    }
+
+    // Trim and validate SQL query
+    const sqlQuery = response.sqlQuery.trim();
+    if (!sqlQuery || sqlQuery.length === 0) {
+      setExecutionError('SQL query is empty. Please generate a new query.');
+      return;
+    }
+
+    // Reset execution state
+    setIsExecuting(true);
+    setExecutionError(null);
+    setExecutionResult(null);
+    setExecutionProgressStage('');
+    setExecutionProgressStatus(null);
+    setExecutionProgressMessage('');
+
+    // Generate execution request ID
+    const execRequestId = `query-exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setExecutionRequestId(execRequestId);
+
+    try {
+      const requestPayload = {
+        databaseInfoId: selectedDatabaseId as number,
+        sqlQuery: sqlQuery,
+        timeoutSeconds: 30,
+        clientRequestId: execRequestId,
+      };
+      
+      console.log('Executing query:', {
+        databaseInfoId: requestPayload.databaseInfoId,
+        sqlQueryLength: requestPayload.sqlQuery.length,
+        sqlQueryPreview: requestPayload.sqlQuery.substring(0, 100),
+      });
+
+      const result = await queryExecutionApi.execute(requestPayload);
+
+      setExecutionResult(result);
+      setIsExecuting(false);
+      setExecutionProgressStatus('SUCCESS');
+      setExecutionProgressMessage('Query executed successfully!');
+
+      if (!result.success) {
+        setExecutionError(result.errorMessage || 'Query execution failed');
+      }
+    } catch (err: any) {
+      console.error('Failed to execute query:', err);
+      
+      // Handle validation errors (400 Bad Request)
+      let errorMessage = 'Failed to execute query. Please try again.';
+      
+      if (err.response?.status === 400) {
+        const errorData = err.response.data;
+        if (errorData?.errors) {
+          // Validation errors from backend
+          const fieldErrors = Object.entries(errorData.errors)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join(', ');
+          errorMessage = `Validation error: ${fieldErrors}`;
+        } else if (errorData?.errorMessage) {
+          // Error message from QueryExecutionResponse
+          errorMessage = errorData.errorMessage;
+        } else if (errorData?.message) {
+          errorMessage = errorData.message;
+        } else {
+          errorMessage = 'Invalid request. Please check your SQL query and database selection.';
+        }
+      } else if (err.response?.data?.errorMessage) {
+        errorMessage = err.response.data.errorMessage;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setExecutionError(errorMessage);
+      setIsExecuting(false);
+      setExecutionProgressStatus('ERROR');
+      setExecutionProgressMessage('Query execution failed');
+    }
+  };
+
+  // Retry query execution
+  const handleRetryExecution = () => {
+    handleExecuteQuery();
   };
 
   // Load query from history
@@ -420,6 +548,86 @@ export default function NLToSQLPage() {
                           />
                         ))}
                       </Box>
+                    </Box>
+                  )}
+
+                  {/* Execute Query Button */}
+                  {response && response.sqlQuery && (
+                    <Box sx={{ mt: 3 }}>
+                      {!response.isValid && (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                          <Typography variant="body2">
+                            SQL validation failed. You can still try to execute it, but it may fail.
+                          </Typography>
+                        </Alert>
+                      )}
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        <Button
+                          variant="contained"
+                          color={response.isValid ? "success" : "warning"}
+                          size="large"
+                          startIcon={isExecuting ? <CircularProgress size={20} /> : <PlayArrowIcon />}
+                          onClick={handleExecuteQuery}
+                          disabled={isExecuting || !response.sqlQuery}
+                        >
+                          {isExecuting ? 'Executing...' : 'Execute Query'}
+                        </Button>
+                        {executionError && (
+                          <Button
+                            variant="outlined"
+                            size="large"
+                            startIcon={<RefreshIcon />}
+                            onClick={handleRetryExecution}
+                            disabled={isExecuting}
+                          >
+                            Retry
+                          </Button>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Query Execution Progress */}
+                  {isExecuting && (
+                    <Box sx={{ mt: 2 }}>
+                      {executionProgressStatus === 'IN_PROGRESS' && (
+                        <LinearProgress sx={{ mb: 1 }} />
+                      )}
+                      {executionProgressStage && (
+                        <Typography variant="body2" color="text.secondary">
+                          {executionProgressStage}: {executionProgressMessage || 'Executing query...'}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Query Execution Error */}
+                  {executionError && (
+                    <Alert severity="error" onClose={() => setExecutionError(null)} sx={{ mt: 2 }}>
+                      {executionError}
+                    </Alert>
+                  )}
+
+                  {/* Query Execution Results */}
+                  {executionResult && executionResult.success && (
+                    <Box sx={{ mt: 4 }}>
+                      <Divider sx={{ mb: 2 }} />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6">Query Results</Typography>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          {executionResult.executedAt && (
+                            <Typography variant="caption" color="text.secondary">
+                              Executed at: {new Date(executionResult.executedAt).toLocaleString()}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                      <ResultsTable
+                        columns={executionResult.columns}
+                        rows={executionResult.rows}
+                        rowCount={executionResult.rowCount}
+                        executionTimeMs={executionResult.executionTimeMs}
+                      />
                     </Box>
                   )}
                 </Box>

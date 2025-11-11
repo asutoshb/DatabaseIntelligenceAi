@@ -80,7 +80,13 @@ public class QueryExecutionController {
             if (response.isSuccess()) {
                 return ResponseEntity.ok(response);
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                // Check if it's a validation error (400) or database/execution error (500)
+                String errorMessage = response.getErrorMessage();
+                boolean isValidationError = errorMessage != null && 
+                    (errorMessage.contains("validation") || errorMessage.contains("Only SELECT queries"));
+                
+                HttpStatus status = isValidationError ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR;
+                return ResponseEntity.status(status).body(response);
             }
         } catch (Exception e) {
             QueryExecutionResponse errorResponse = new QueryExecutionResponse();
