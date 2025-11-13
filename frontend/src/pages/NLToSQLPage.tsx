@@ -37,6 +37,10 @@ import {
   History as HistoryIcon,
   PlayArrow as PlayArrowIcon,
   Refresh as RefreshIcon,
+  TableChart as TableChartIcon,
+  BarChart as BarChartIcon,
+  ViewColumn as ViewColumnIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { nlToSqlApi, databaseApi, queryExecutionApi } from '../services/api';
@@ -48,6 +52,9 @@ import type {
   QueryExecutionResponse,
 } from '../types';
 import ResultsTable from '../components/ResultsTable';
+import ChartContainer from '../components/charts/ChartContainer';
+import InsightsPanel from '../components/InsightsPanel';
+import { exportToCSV, exportToJSON } from '../utils/exportUtils';
 
 interface QueryHistoryItem {
   id: string;
@@ -92,6 +99,9 @@ export default function NLToSQLPage() {
   // Query history
   const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Results view state
+  const [resultsView, setResultsView] = useState<'table' | 'chart' | 'both'>('both');
 
   // WebSocket callback for NL to SQL updates
   const handleNlToSqlUpdate = useCallback((message: RealTimeStatusMessage) => {
@@ -612,9 +622,56 @@ export default function NLToSQLPage() {
                   {executionResult && executionResult.success && (
                     <Box sx={{ mt: 4 }}>
                       <Divider sx={{ mb: 2 }} />
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
                         <Typography variant="h6">Query Results</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                          {/* View Toggle */}
+                          <Box sx={{ display: 'flex', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+                            <Button
+                              size="small"
+                              variant={resultsView === 'table' ? 'contained' : 'text'}
+                              onClick={() => setResultsView('table')}
+                              startIcon={<TableChartIcon />}
+                              sx={{ minWidth: 'auto', px: 1.5 }}
+                            >
+                              Table
+                            </Button>
+                            <Button
+                              size="small"
+                              variant={resultsView === 'chart' ? 'contained' : 'text'}
+                              onClick={() => setResultsView('chart')}
+                              startIcon={<BarChartIcon />}
+                              sx={{ minWidth: 'auto', px: 1.5 }}
+                            >
+                              Chart
+                            </Button>
+                            <Button
+                              size="small"
+                              variant={resultsView === 'both' ? 'contained' : 'text'}
+                              onClick={() => setResultsView('both')}
+                              startIcon={<ViewColumnIcon />}
+                              sx={{ minWidth: 'auto', px: 1.5 }}
+                            >
+                              Both
+                            </Button>
+                          </Box>
+                          {/* Export Buttons */}
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<DownloadIcon />}
+                            onClick={() => exportToCSV(executionResult.columns, executionResult.rows)}
+                          >
+                            CSV
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<DownloadIcon />}
+                            onClick={() => exportToJSON(executionResult.columns, executionResult.rows)}
+                          >
+                            JSON
+                          </Button>
                           {executionResult.executedAt && (
                             <Typography variant="caption" color="text.secondary">
                               Executed at: {new Date(executionResult.executedAt).toLocaleString()}
@@ -622,12 +679,45 @@ export default function NLToSQLPage() {
                           )}
                         </Box>
                       </Box>
-                      <ResultsTable
-                        columns={executionResult.columns}
-                        rows={executionResult.rows}
-                        rowCount={executionResult.rowCount}
-                        executionTimeMs={executionResult.executionTimeMs}
-                      />
+
+                      {/* Insights Panel */}
+                      <Box sx={{ mb: 3 }}>
+                        <InsightsPanel
+                          columns={executionResult.columns}
+                          rows={executionResult.rows}
+                        />
+                      </Box>
+
+                      {/* Results Display */}
+                      <Grid container spacing={3}>
+                        {/* Table View */}
+                        {(resultsView === 'table' || resultsView === 'both') && (
+                          <Grid item xs={12} md={resultsView === 'both' ? 6 : 12}>
+                            <ResultsTable
+                              columns={executionResult.columns}
+                              rows={executionResult.rows}
+                              rowCount={executionResult.rowCount}
+                              executionTimeMs={executionResult.executionTimeMs}
+                            />
+                          </Grid>
+                        )}
+
+                        {/* Chart View */}
+                        {(resultsView === 'chart' || resultsView === 'both') && (
+                          <Grid item xs={12} md={resultsView === 'both' ? 6 : 12}>
+                            <Paper sx={{ p: 2 }}>
+                              <Typography variant="h6" gutterBottom>
+                                Visualization
+                              </Typography>
+                              <ChartContainer
+                                columns={executionResult.columns}
+                                rows={executionResult.rows}
+                                height={400}
+                              />
+                            </Paper>
+                          </Grid>
+                        )}
+                      </Grid>
                     </Box>
                   )}
                 </Box>
