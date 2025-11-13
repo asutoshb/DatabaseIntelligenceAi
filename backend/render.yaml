@@ -1,0 +1,57 @@
+# Render.com deployment configuration
+# This file defines how to deploy the backend service on Render
+
+services:
+  - type: web
+    name: ai-database-intelligence-backend
+    env: java
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/*.jar
+    envVars:
+      # Database Configuration
+      # Render will provide DATABASE_URL automatically if you add a PostgreSQL database
+      # Or set these individually:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      
+      # Application Configuration
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      
+      # OpenAI API Key (REQUIRED)
+      - key: OPENAI_API_KEY
+        sync: false
+      
+      # JWT Configuration (REQUIRED)
+      - key: JWT_SECRET
+        sync: false
+      
+      # Optional JWT Expiration
+      - key: JWT_EXPIRATION
+        value: 86400000
+      
+      # CORS Configuration (set to your frontend URL)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      
+      # Server Configuration
+      - key: SERVER_PORT
+        value: 8080
+      
+      # Logging
+      - key: LOGGING_LEVEL_ROOT
+        value: INFO
+      - key: LOGGING_LEVEL_COM_DATABASEAI
+        value: INFO
+
+# PostgreSQL Database (optional - uncomment if you want Render to create it)
+# databases:
+#   - name: database-intelligence-db
+#     plan: free
+#     databaseName: database_intelligence
+#     user: database_user
+
