@@ -15,8 +15,6 @@ import {
   Alert,
 } from '@mui/material';
 import {
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
   Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 
