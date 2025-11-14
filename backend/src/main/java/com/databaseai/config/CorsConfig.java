@@ -1,10 +1,14 @@
 package com.databaseai.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * CORS Configuration
@@ -14,23 +18,26 @@ import org.springframework.web.filter.CorsFilter;
  * Problem: By default, browsers block requests from one domain (frontend) 
  * to another domain (backend) for security.
  * 
- * Solution: This configuration allows our React frontend (localhost:3000)
- * to make requests to our Spring Boot backend (localhost:8080).
+ * Solution: This configuration allows our React frontend to make requests to backend.
+ * Reads allowed origins from CORS_ALLOWED_ORIGINS environment variable.
  * 
  * Without this, you'll get CORS errors in the browser console.
  */
 @Configuration
 public class CorsConfig {
 
+    @Value("${spring.web.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    private String allowedOrigins;
+
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Allow requests from these origins (where frontend runs)
-        config.addAllowedOrigin("http://localhost:3000");
-        config.addAllowedOrigin("http://localhost:5173"); // Vite default port
-        config.addAllowedOriginPattern("*");
+        // Parse allowed origins from environment variable (comma-separated)
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        // Use setAllowedOriginPatterns to support wildcards and credentials together
+        config.setAllowedOriginPatterns(origins);
         
         // Allow these HTTP methods
         config.addAllowedMethod("GET");

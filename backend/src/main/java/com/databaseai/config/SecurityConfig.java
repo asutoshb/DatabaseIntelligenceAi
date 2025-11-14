@@ -18,8 +18,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security Configuration
@@ -128,11 +130,20 @@ public class SecurityConfig {
      * CORS Configuration Source
      * 
      * Allows frontend (React) to make requests to backend
+     * Reads allowed origins from CORS_ALLOWED_ORIGINS environment variable
      */
+    @Value("${spring.web.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    private String allowedOrigins;
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173"));
+        
+        // Parse allowed origins from environment variable (comma-separated)
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        // Use setAllowedOriginPatterns to support wildcards and credentials together
+        configuration.setAllowedOriginPatterns(origins);
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
