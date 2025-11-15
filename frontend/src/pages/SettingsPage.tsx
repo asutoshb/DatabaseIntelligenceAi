@@ -324,28 +324,40 @@ export default function SettingsPage() {
                 placeholder="e.g., postgres"
               />
               <TextField
-                label="Password"
+                label={editingDatabase && !(editingDatabase as any).hasPassword 
+                  ? "Password (REQUIRED for Render)" 
+                  : "Password (Optional)"}
                 type="password"
                 fullWidth
+                required={!!(editingDatabase && !(editingDatabase as any).hasPassword)}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder={editingDatabase && (editingDatabase as any).hasPassword 
                   ? "Enter new password to update, or leave empty to keep existing" 
-                  : "Enter password (required for Render databases)"}
+                  : editingDatabase && !(editingDatabase as any).hasPassword
+                  ? "⚠️ Password is REQUIRED - Enter password from Render connection string"
+                  : "Leave empty if database doesn't require password"}
                 helperText={
                   editingDatabase && (editingDatabase as any).hasPassword
-                    ? "Password is already set. Enter a new password to update it."
-                    : "Required for Render databases. Get it from Render → Database → Connect → Internal Database URL"
+                    ? "Password is already set. Enter a new password to update it, or leave empty to keep existing."
+                    : editingDatabase && !(editingDatabase as any).hasPassword
+                    ? "⚠️ No password set! This will cause authentication errors. Get password from Render → Database → Connect → Internal Database URL"
+                    : "Optional - Only needed if your database requires authentication. For Render databases, get it from Render → Database → Connect → Internal Database URL"
                 }
               />
               {editingDatabase && (editingDatabase as any).hasPassword && (
                 <Alert severity="success" sx={{ mt: 1 }}>
-                  ✓ Password is already configured for this database.
+                  ✓ Password is configured for this database.
+                </Alert>
+              )}
+              {editingDatabase && !(editingDatabase as any).hasPassword && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  ⚠️ <strong>Password is NOT set!</strong> You must enter a password for Render databases. Get it from Render → Database → Connect → Internal Database URL. Extract the password from the connection string (between username: and @).
                 </Alert>
               )}
               {!editingDatabase && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  For Render databases: Get the password from the connection string in Render dashboard.
+                  Password is optional. Only required if your database needs authentication (e.g., Render, cloud databases).
                 </Alert>
               )}
             </Box>

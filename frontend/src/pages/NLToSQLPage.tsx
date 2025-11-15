@@ -418,6 +418,38 @@ export default function NLToSQLPage() {
                     </FormControl>
                   </Grid>
 
+                  {/* Demo Query Suggestions */}
+                  {selectedDatabaseId && (
+                    <Grid item xs={12}>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Try these demo queries:
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {[
+                            'Show me top 5 customers by revenue',
+                            'List all customers from USA',
+                            'What is the total revenue of all customers',
+                            'Show me customers with revenue greater than 100000',
+                            'How many customers are there',
+                            'Show me customers sorted by name',
+                            'What is the average revenue per customer',
+                            'List customers by country',
+                          ].map((demoQuery) => (
+                            <Chip
+                              key={demoQuery}
+                              label={demoQuery}
+                              onClick={() => setQuery(demoQuery)}
+                              sx={{ cursor: 'pointer' }}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Grid>
+                  )}
+
                   {/* Query Input */}
                   <Grid item xs={12}>
                     <TextField
