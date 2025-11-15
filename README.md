@@ -2,6 +2,11 @@
 
 🚀 An AI-powered platform that converts natural language queries to SQL using RAG (Retrieval-Augmented Generation).
 
+## 🌐 Live Demo
+
+- **Frontend**: [https://database-intelligence.netlify.app/nl-to-sql](https://database-intelligence.netlify.app/nl-to-sql)
+- **Backend API Health**: [https://ai-database-intelligence-backend.onrender.com/api/health](https://ai-database-intelligence-backend.onrender.com/api/health)
+
 ## 📋 Project Overview
 
 This project enables users to:
