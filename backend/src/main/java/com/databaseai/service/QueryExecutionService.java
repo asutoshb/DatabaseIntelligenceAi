@@ -116,6 +116,15 @@ public class QueryExecutionService {
         DatabaseInfo databaseInfo = databaseInfoRepository.findById(databaseInfoId)
                 .orElse(null);
 
+        // Debug: Log database info retrieval
+        if (databaseInfo != null) {
+            System.out.println("DEBUG: Retrieved database: " + databaseInfo.getName() + " (ID: " + databaseInfoId + ")");
+            System.out.println("DEBUG: Database password status: " + 
+                (databaseInfo.getPassword() != null && !databaseInfo.getPassword().isEmpty() 
+                    ? "SET (length: " + databaseInfo.getPassword().length() + ")" 
+                    : "NOT SET (NULL or EMPTY)"));
+        }
+
         if (databaseInfo == null) {
             Map<String, Object> databaseError = new HashMap<>();
             databaseError.put("databaseInfoId", databaseInfoId);

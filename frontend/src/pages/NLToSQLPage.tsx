@@ -410,7 +410,13 @@ export default function NLToSQLPage() {
                         ) : (
                           databases.map((db) => (
                             <MenuItem key={db.id} value={db.id}>
-                              {db.name}
+                              <Box>
+                                <Typography variant="body1">{db.name}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {db.databaseName} @ {db.host}
+                                  {!(db as any).hasPassword && ' ⚠️ No Password'}
+                                </Typography>
+                              </Box>
                             </MenuItem>
                           ))
                         )}
