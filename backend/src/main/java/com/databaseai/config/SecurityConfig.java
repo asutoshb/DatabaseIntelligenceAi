@@ -104,10 +104,8 @@ public class SecurityConfig {
                 // Public endpoints (no authentication required)
                 .requestMatchers("/auth/register", "/auth/login").permitAll()
                 .requestMatchers("/health").permitAll()
-                // Allow GET /databases without auth (for listing available databases)
-                // POST/PUT/DELETE still require authentication
-                .requestMatchers(HttpMethod.GET, "/databases").permitAll()
-                .requestMatchers(HttpMethod.GET, "/databases/**").permitAll()
+                // Allow all /databases endpoints without auth (for development/demo)
+                .requestMatchers("/databases", "/databases/**").permitAll()
                 // Allow NL to SQL endpoints without auth (for development)
                 .requestMatchers("/nl-to-sql/**").permitAll()
                 // Allow query execution endpoints without auth (for development)
