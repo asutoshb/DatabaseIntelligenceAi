@@ -104,6 +104,17 @@ export const databaseApi = {
     const response = await apiClient.get<DatabaseInfo>(`/databases/${id}`);
     return response.data;
   },
+  create: async (database: Omit<DatabaseInfo, 'id'>): Promise<DatabaseInfo> => {
+    const response = await apiClient.post<DatabaseInfo>('/databases', database);
+    return response.data;
+  },
+  update: async (id: number, database: Partial<DatabaseInfo>): Promise<DatabaseInfo> => {
+    const response = await apiClient.put<DatabaseInfo>(`/databases/${id}`, database);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`/databases/${id}`);
+  },
 };
 
 // Export the axios instance for custom requests

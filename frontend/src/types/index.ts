@@ -73,6 +73,7 @@ export interface HealthResponse {
 export interface DatabaseInfo {
   id: number;
   name: string;
+  databaseType?: string;
   host: string;
   port: number;
   databaseName: string;
