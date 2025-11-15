@@ -46,6 +46,13 @@ public class DatabaseInfoService {
             throw new IllegalArgumentException("Database name already exists: " + databaseInfo.getName());
         }
 
+        // Log password status for debugging
+        if (databaseInfo.getPassword() != null && !databaseInfo.getPassword().isEmpty()) {
+            System.out.println("INFO: Creating database with password: " + databaseInfo.getName() + " [Password length: " + databaseInfo.getPassword().length() + "]");
+        } else {
+            System.out.println("INFO: Creating database without password: " + databaseInfo.getName());
+        }
+
         return databaseInfoRepository.save(databaseInfo);
     }
 
@@ -66,6 +73,9 @@ public class DatabaseInfoService {
             // Only update password if a new one is provided (not null and not empty)
             if (databaseInfo.getPassword() != null && !databaseInfo.getPassword().isEmpty()) {
                 dbToUpdate.setPassword(databaseInfo.getPassword());
+                System.out.println("INFO: Password updated for database: " + dbToUpdate.getName() + " (ID: " + id + ") [Length: " + databaseInfo.getPassword().length() + "]");
+            } else {
+                System.out.println("INFO: No password provided in update request for database: " + dbToUpdate.getName() + " (ID: " + id + ") - keeping existing password");
             }
             return Optional.of(databaseInfoRepository.save(dbToUpdate));
         }

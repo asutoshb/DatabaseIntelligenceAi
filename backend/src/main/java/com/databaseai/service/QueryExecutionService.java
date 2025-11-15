@@ -273,8 +273,19 @@ public class QueryExecutionService {
         // Note: In production, password should be encrypted and stored securely
         String password = databaseInfo.getPassword();
         
+        // Log password status for debugging (don't log actual password!)
+        if (password == null) {
+            System.out.println("WARNING: Password is NULL for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ")");
+        } else if (password.isEmpty()) {
+            System.out.println("WARNING: Password is EMPTY for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ")");
+        } else {
+            System.out.println("INFO: Password is SET for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ") [Length: " + password.length() + "]");
+        }
+        
         if (password != null && !password.isEmpty()) {
             props.setProperty("password", password);
+        } else {
+            System.out.println("WARNING: Attempting connection without password for database: " + databaseInfo.getName());
         }
 
         // Additional connection properties for security and performance
