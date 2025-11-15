@@ -44,6 +44,7 @@ export default function SettingsPage() {
     port: 5432,
     databaseName: '',
     username: '',
+    password: '',
   });
 
   // Load databases on mount
@@ -75,6 +76,7 @@ export default function SettingsPage() {
         port: database.port,
         databaseName: database.databaseName,
         username: database.username,
+        password: '', // Don't show existing password for security
       });
     } else {
       setEditingDatabase(null);
@@ -85,6 +87,7 @@ export default function SettingsPage() {
         port: 5432,
         databaseName: '',
         username: '',
+        password: '',
       });
     }
     setDialogOpen(true);
@@ -100,6 +103,7 @@ export default function SettingsPage() {
       port: 5432,
       databaseName: '',
       username: '',
+      password: '',
     });
   };
 
@@ -308,8 +312,17 @@ export default function SettingsPage() {
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="e.g., postgres"
               />
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Leave empty if no password required"
+                helperText="Required for Render databases. Get it from Render → Database → Connect → Internal Database URL"
+              />
               <Alert severity="info" sx={{ mt: 1 }}>
-                Note: Password is not stored for security. Make sure your database allows connections from the backend server.
+                For Render databases: Get the password from the connection string in Render dashboard.
               </Alert>
             </Box>
           </DialogContent>

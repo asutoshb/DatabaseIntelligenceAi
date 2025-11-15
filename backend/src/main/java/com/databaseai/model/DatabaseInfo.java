@@ -65,6 +65,14 @@ public class DatabaseInfo {
     private String username;
 
     /**
+     * Password for database connection
+     * Note: In production, this should be encrypted!
+     * Optional - some databases don't require passwords
+     */
+    @Column(nullable = true)
+    private String password;
+
+    /**
      * Timestamp when this database was registered
      */
     @Column(name = "created_at", updatable = false)
@@ -148,6 +156,14 @@ public class DatabaseInfo {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public LocalDateTime getCreatedAt() {

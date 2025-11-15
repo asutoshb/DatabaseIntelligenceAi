@@ -269,11 +269,11 @@ public class QueryExecutionService {
         Properties props = new Properties();
         props.setProperty("user", databaseInfo.getUsername());
         
+        // Get password from DatabaseInfo (if provided)
         // Note: In production, password should be encrypted and stored securely
-        // For now, we'll use empty password (you'll need to add password field to DatabaseInfo)
-        String password = ""; // TODO: Get encrypted password from DatabaseInfo
+        String password = databaseInfo.getPassword();
         
-        if (!password.isEmpty()) {
+        if (password != null && !password.isEmpty()) {
             props.setProperty("password", password);
         }
 
