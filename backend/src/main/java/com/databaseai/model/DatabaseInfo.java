@@ -1,5 +1,6 @@
 package com.databaseai.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -68,7 +69,9 @@ public class DatabaseInfo {
      * Password for database connection
      * Note: In production, this should be encrypted!
      * Optional - some databases don't require passwords
+     * @JsonIgnore prevents password from being returned in API responses
      */
+    @JsonIgnore
     @Column(nullable = true)
     private String password;
 
