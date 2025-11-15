@@ -78,6 +78,6 @@ export interface DatabaseInfo {
   port: number;
   databaseName: string;
   username: string;
-  // Note: password is never sent to frontend
+  password?: string; // Optional - only sent when creating/updating, never returned in GET requests
 }
 

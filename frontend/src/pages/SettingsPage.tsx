@@ -112,13 +112,24 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
+      // Prepare data - only include password if it's not empty
+      const dataToSend = {
+        name: formData.name,
+        databaseType: formData.databaseType,
+        host: formData.host,
+        port: formData.port,
+        databaseName: formData.databaseName,
+        username: formData.username,
+        ...(formData.password && formData.password.trim() !== '' && { password: formData.password }),
+      };
+
       if (editingDatabase) {
         // Update existing database
-        await databaseApi.update(editingDatabase.id, formData);
+        await databaseApi.update(editingDatabase.id, dataToSend);
         setSuccess('Database updated successfully!');
       } else {
         // Create new database
-        await databaseApi.create(formData);
+        await databaseApi.create(dataToSend);
         setSuccess('Database added successfully!');
       }
 

@@ -63,6 +63,10 @@ public class DatabaseInfoService {
             dbToUpdate.setPort(databaseInfo.getPort());
             dbToUpdate.setDatabaseName(databaseInfo.getDatabaseName());
             dbToUpdate.setUsername(databaseInfo.getUsername());
+            // Only update password if a new one is provided (not null and not empty)
+            if (databaseInfo.getPassword() != null && !databaseInfo.getPassword().isEmpty()) {
+                dbToUpdate.setPassword(databaseInfo.getPassword());
+            }
             return Optional.of(databaseInfoRepository.save(dbToUpdate));
         }
         
