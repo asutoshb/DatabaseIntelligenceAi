@@ -433,9 +433,10 @@ export default function NLToSQLPage() {
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                           {[
-                            'List all customers',
-                            'Show me top 5 customers by revenue',
-                            'Show me total revenue by customer from orders',
+                            'How many customers are there',
+                            'Show me customers with revenue greater than 100000',
+                            'List customers by country',
+                            'list of all customers',
                           ].map((demoQuery) => (
                             <Chip
                               key={demoQuery}
