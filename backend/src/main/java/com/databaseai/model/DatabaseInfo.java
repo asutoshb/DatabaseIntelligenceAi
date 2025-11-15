@@ -70,9 +70,11 @@ public class DatabaseInfo {
      * Password for database connection
      * Note: In production, this should be encrypted!
      * Optional - some databases don't require passwords
-     * @JsonIgnore prevents password from being returned in API responses
+     * 
+     * WRITE_ONLY allows password to be set via POST/PUT requests (deserialization)
+     * but prevents it from being returned in GET responses (serialization)
      */
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = true)
     private String password;
 

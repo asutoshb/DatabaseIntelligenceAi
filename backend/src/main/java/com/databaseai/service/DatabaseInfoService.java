@@ -53,7 +53,16 @@ public class DatabaseInfoService {
             System.out.println("INFO: Creating database without password: " + databaseInfo.getName());
         }
 
-        return databaseInfoRepository.save(databaseInfo);
+        DatabaseInfo saved = databaseInfoRepository.save(databaseInfo);
+        
+        // Verify password was saved correctly
+        if (saved.getPassword() != null && !saved.getPassword().isEmpty()) {
+            System.out.println("VERIFIED: Password is saved in database for: " + saved.getName() + " (ID: " + saved.getId() + ") [Length: " + saved.getPassword().length() + "]");
+        } else {
+            System.out.println("WARNING: Password is NULL or EMPTY in database for: " + saved.getName() + " (ID: " + saved.getId() + ")");
+        }
+        
+        return saved;
     }
 
     /**
@@ -77,7 +86,17 @@ public class DatabaseInfoService {
             } else {
                 System.out.println("INFO: No password provided in update request for database: " + dbToUpdate.getName() + " (ID: " + id + ") - keeping existing password");
             }
-            return Optional.of(databaseInfoRepository.save(dbToUpdate));
+            
+            DatabaseInfo saved = databaseInfoRepository.save(dbToUpdate);
+            
+            // Verify password was saved correctly
+            if (saved.getPassword() != null && !saved.getPassword().isEmpty()) {
+                System.out.println("VERIFIED: Password is saved in database for: " + saved.getName() + " (ID: " + id + ") [Length: " + saved.getPassword().length() + "]");
+            } else {
+                System.out.println("WARNING: Password is NULL or EMPTY in database for: " + saved.getName() + " (ID: " + id + ")");
+            }
+            
+            return Optional.of(saved);
         }
         
         return Optional.empty();
