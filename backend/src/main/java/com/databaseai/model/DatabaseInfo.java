@@ -1,6 +1,7 @@
 package com.databaseai.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -172,8 +173,9 @@ public class DatabaseInfo {
     /**
      * Check if password is set (without revealing it)
      * Used for API responses to indicate if password exists
-     * Note: This method is exposed in JSON as "hasPassword"
+     * @JsonProperty ensures this is included in JSON responses as "hasPassword"
      */
+    @JsonProperty("hasPassword")
     public boolean isHasPassword() {
         return password != null && !password.isEmpty();
     }
