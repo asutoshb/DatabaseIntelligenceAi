@@ -79,5 +79,6 @@ export interface DatabaseInfo {
   databaseName: string;
   username: string;
   password?: string; // Optional - only sent when creating/updating, never returned in GET requests
+  hasPassword?: boolean; // Indicates if password is set (without revealing it)
 }
 

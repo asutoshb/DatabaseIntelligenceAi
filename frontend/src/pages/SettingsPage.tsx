@@ -329,12 +329,25 @@ export default function SettingsPage() {
                 fullWidth
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Leave empty if no password required"
-                helperText="Required for Render databases. Get it from Render → Database → Connect → Internal Database URL"
+                placeholder={editingDatabase && (editingDatabase as any).hasPassword 
+                  ? "Enter new password to update, or leave empty to keep existing" 
+                  : "Enter password (required for Render databases)"}
+                helperText={
+                  editingDatabase && (editingDatabase as any).hasPassword
+                    ? "Password is already set. Enter a new password to update it."
+                    : "Required for Render databases. Get it from Render → Database → Connect → Internal Database URL"
+                }
               />
-              <Alert severity="info" sx={{ mt: 1 }}>
-                For Render databases: Get the password from the connection string in Render dashboard.
-              </Alert>
+              {editingDatabase && (editingDatabase as any).hasPassword && (
+                <Alert severity="success" sx={{ mt: 1 }}>
+                  ✓ Password is already configured for this database.
+                </Alert>
+              )}
+              {!editingDatabase && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  For Render databases: Get the password from the connection string in Render dashboard.
+                </Alert>
+              )}
             </Box>
           </DialogContent>
           <DialogActions>

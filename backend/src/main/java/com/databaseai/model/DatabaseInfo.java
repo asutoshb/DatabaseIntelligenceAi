@@ -169,6 +169,15 @@ public class DatabaseInfo {
         this.password = password;
     }
 
+    /**
+     * Check if password is set (without revealing it)
+     * Used for API responses to indicate if password exists
+     */
+    @JsonIgnore
+    public boolean hasPassword() {
+        return password != null && !password.isEmpty();
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
