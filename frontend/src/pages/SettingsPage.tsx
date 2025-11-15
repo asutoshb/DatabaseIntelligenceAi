@@ -112,16 +112,32 @@ export default function SettingsPage() {
       setError(null);
       setSuccess(null);
 
-      // Prepare data - only include password if it's not empty
-      const dataToSend = {
+      // Prepare data - include password if provided
+      // For updates: if password is empty but database has password, don't send it (keep existing)
+      // For updates: if password is empty and database has NO password, send empty string to clear
+      // For creates: send password if provided
+      const dataToSend: any = {
         name: formData.name,
         databaseType: formData.databaseType,
         host: formData.host,
         port: formData.port,
         databaseName: formData.databaseName,
         username: formData.username,
-        ...(formData.password && formData.password.trim() !== '' && { password: formData.password }),
       };
+      
+      // Always include password field if it has a value
+      // For updates without password: don't include it (keeps existing)
+      // For updates with password: include it (updates password)
+      // For creates: include it if provided
+      if (formData.password && formData.password.trim() !== '') {
+        dataToSend.password = formData.password.trim();
+      } else if (!editingDatabase) {
+        // For new databases, send empty string if no password
+        dataToSend.password = '';
+      }
+      // For updates: if password is empty, don't include it (keeps existing password)
+      
+      console.log('Sending database data:', { ...dataToSend, password: dataToSend.password ? '***' : 'NOT INCLUDED' });
 
       if (editingDatabase) {
         // Update existing database
@@ -367,7 +383,13 @@ export default function SettingsPage() {
             <Button
               onClick={handleSubmit}
               variant="contained"
-              disabled={!formData.name || !formData.host || !formData.databaseName || !formData.username}
+              disabled={
+                !formData.name || 
+                !formData.host || 
+                !formData.databaseName || 
+                !formData.username ||
+                (editingDatabase && !(editingDatabase as any).hasPassword && !formData.password)
+              }
             >
               {editingDatabase ? 'Update' : 'Add'}
             </Button>

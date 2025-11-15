@@ -63,11 +63,16 @@ public class DatabaseInfoController {
      *   "host": "localhost",
      *   "port": 5432,
      *   "databaseName": "mydb",
-     *   "username": "postgres"
+     *   "username": "postgres",
+     *   "password": "optional-password"
      * }
      */
     @PostMapping
     public ResponseEntity<?> createDatabase(@RequestBody DatabaseInfo databaseInfo) {
+        // Debug: Log password status
+        System.out.println("DEBUG: Create request received");
+        System.out.println("DEBUG: Password in request: " + (databaseInfo.getPassword() != null ? "SET (length: " + databaseInfo.getPassword().length() + ")" : "NULL"));
+        
         try {
             DatabaseInfo created = databaseInfoService.createDatabase(databaseInfo);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -84,6 +89,10 @@ public class DatabaseInfoController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateDatabase(@PathVariable Long id, @RequestBody DatabaseInfo databaseInfo) {
+        // Debug: Log password status
+        System.out.println("DEBUG: Update request received for database ID: " + id);
+        System.out.println("DEBUG: Password in request: " + (databaseInfo.getPassword() != null ? "SET (length: " + databaseInfo.getPassword().length() + ")" : "NULL"));
+        
         return databaseInfoService.updateDatabase(id, databaseInfo)
                 .map(updated -> ResponseEntity.ok(updated))
                 .orElse(ResponseEntity.notFound().build());
