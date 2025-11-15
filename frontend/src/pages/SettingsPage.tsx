@@ -388,7 +388,7 @@ export default function SettingsPage() {
                 !formData.host || 
                 !formData.databaseName || 
                 !formData.username ||
-                (editingDatabase && !(editingDatabase as any).hasPassword && !formData.password)
+                !!(editingDatabase && !(editingDatabase as any).hasPassword && !formData.password)
               }
             >
               {editingDatabase ? 'Update' : 'Add'}
