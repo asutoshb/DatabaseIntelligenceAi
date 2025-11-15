@@ -172,9 +172,9 @@ public class DatabaseInfo {
     /**
      * Check if password is set (without revealing it)
      * Used for API responses to indicate if password exists
+     * Note: This method is exposed in JSON as "hasPassword"
      */
-    @JsonIgnore
-    public boolean hasPassword() {
+    public boolean isHasPassword() {
         return password != null && !password.isEmpty();
     }
 
