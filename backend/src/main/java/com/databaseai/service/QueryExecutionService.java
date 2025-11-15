@@ -217,8 +217,13 @@ public class QueryExecutionService {
                 if (errorMessage.contains("role") && errorMessage.contains("does not exist")) {
                     userFriendlyMessage = "Database connection failed: The database user '" + 
                         databaseInfo.getUsername() + "' does not exist. Please check your database configuration.";
-                } else if (errorMessage.contains("password authentication failed")) {
-                    userFriendlyMessage = "Database connection failed: Invalid username or password. Please check your database credentials.";
+                } else if (errorMessage.contains("password authentication failed") || 
+                           errorMessage.contains("password") && errorMessage.contains("authentication")) {
+                    String passwordStatus = (databaseInfo.getPassword() != null && !databaseInfo.getPassword().isEmpty()) 
+                        ? "Password is set (length: " + databaseInfo.getPassword().length() + ")" 
+                        : "NO PASSWORD SET";
+                    userFriendlyMessage = "Database connection failed: Password authentication error. " + passwordStatus + 
+                        ". Please check your database credentials in Settings. For Render databases, get the password from Render → Database → Connect → Internal Database URL.";
                 } else if (errorMessage.contains("Connection refused")) {
                     userFriendlyMessage = "Database connection failed: Cannot connect to database at " + 
                         databaseInfo.getHost() + ":" + databaseInfo.getPort() + ". Please check if the database is running.";
@@ -273,19 +278,16 @@ public class QueryExecutionService {
         // Note: In production, password should be encrypted and stored securely
         String password = databaseInfo.getPassword();
         
-        // Log password status for debugging (don't log actual password!)
-        if (password == null) {
-            System.out.println("WARNING: Password is NULL for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ")");
-        } else if (password.isEmpty()) {
-            System.out.println("WARNING: Password is EMPTY for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ")");
-        } else {
-            System.out.println("INFO: Password is SET for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ") [Length: " + password.length() + "]");
-        }
-        
+        // Password is optional - only set if provided
+        // Some databases (like local PostgreSQL) don't require passwords
+        // Cloud databases (like Render) require passwords
         if (password != null && !password.isEmpty()) {
             props.setProperty("password", password);
+            System.out.println("INFO: Using password for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ") [Password length: " + password.length() + "]");
         } else {
-            System.out.println("WARNING: Attempting connection without password for database: " + databaseInfo.getName());
+            System.out.println("ERROR: NO PASSWORD PROVIDED for database: " + databaseInfo.getName() + " (ID: " + databaseInfo.getId() + ")");
+            System.out.println("ERROR: This will fail for databases that require authentication (like Render)");
+            System.out.println("ERROR: Please add password in Settings page for database ID: " + databaseInfo.getId());
         }
 
         // Additional connection properties for security and performance
